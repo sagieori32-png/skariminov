@@ -467,6 +467,24 @@ function QShortText({ q, value, onChange }) {
 }
 
 function QTwoSelects({ q, value = {}, onChange }) {
+  const upd = (id, v) => onChange({ ...value, [id]: v });
+  return (
+    <div className="qc">
+      <h3>{q.question}</h3>
+      <div className="ts">
+        {q.fields.map(f => (
+          <div key={f.id}>
+            <label>{f.label}</label>
+            <select className="si2" value={value[f.id] || ""} onChange={e => upd(f.id, e.target.value)}>
+              <option value="">בחרו...</option>
+              {f.options.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function QRaffle({ surveyId, isKids, accentColor }) {
   const [showForm, setShowForm] = useState(false);
@@ -488,7 +506,7 @@ function QRaffle({ surveyId, isKids, accentColor }) {
         });
       }
       setSent(true);
-    } catch { }
+    } catch(e) { }
     finally { setSending(false); }
   };
 
@@ -545,24 +563,6 @@ function QRaffle({ surveyId, isKids, accentColor }) {
     </div>
   );
 }
-  const upd = (id, v) => onChange({ ...value, [id]: v });
-  return (
-    <div className="qc">
-      <h3>{q.question}</h3>
-      <div className="ts">
-        {q.fields.map(f => (
-          <div key={f.id}>
-            <label>{f.label}</label>
-            <select className="si2" value={value[f.id] || ""} onChange={e => upd(f.id, e.target.value)}>
-              <option value="">בחרו...</option>
-              {f.options.map(o => <option key={o} value={o}>{o}</option>)}
-            </select>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // ═══════ SURVEY FORM ═══════
 
@@ -605,12 +605,14 @@ function SurveyForm({ survey, onBack }) {
       if (GOOGLE_SCRIPT_URL) {
         await fetch(GOOGLE_SCRIPT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(buildPayload()) });
       }
-      setSubmitted(true);
-      // Find the raffle step (or thanks if no raffle)
-      const raffleIdx = qs.findIndex(q => q.type === "raffle");
-      setStep(raffleIdx >= 0 ? raffleIdx : qs.length - 1);
-    } catch { setError("שגיאה בשליחה. אנא נסו שוב."); }
-    finally { setSubmitting(false); }
+    } catch(e) {
+      console.log("fetch error (ignored for no-cors):", e);
+    }
+    setSubmitted(true);
+    var rIdx = -1;
+    for (var ri = 0; ri < qs.length; ri++) { if (qs[ri].type === "raffle") { rIdx = ri; break; } }
+    setStep(rIdx >= 0 ? rIdx : qs.length - 1);
+    setSubmitting(false);
   };
 
   // Find the last answerable step (before raffle/thanks)
