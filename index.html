@@ -494,20 +494,18 @@ function QRaffle({ surveyId, isKids, accentColor }) {
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
 
-  const submit = async () => {
+  const submitRaffle = () => {
     if (!name.trim() || !phone.trim() || !email.trim()) return;
-    setSending(true);
-    try {
-      if (GOOGLE_SCRIPT_URL) {
-        await fetch(GOOGLE_SCRIPT_URL, {
+    if (GOOGLE_SCRIPT_URL) {
+      try {
+        fetch(GOOGLE_SCRIPT_URL, {
           method: "POST", mode: "no-cors",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ survey: "__raffle__", "שם מלא": name, "טלפון": phone, "דואר אלקטרוני": email, "סקר": surveyId }),
         });
-      }
-      setSent(true);
-    } catch(e) { }
-    finally { setSending(false); }
+      } catch(e) { console.log(e); }
+    }
+    setSent(true);
   };
 
   if (sent) {
@@ -556,8 +554,8 @@ function QRaffle({ surveyId, isKids, accentColor }) {
         </div>
       </div>
       <div style={{ textAlign: "center", marginTop: 16 }}>
-        <button className="nb pr" style={{ background: accentColor }} onClick={submit} disabled={sending || !name.trim() || !phone.trim() || !email.trim()}>
-          {sending ? "שולח..." : "שלח והשתתף בהגרלה 🎉"}
+        <button className="nb pr" style={{ background: accentColor }} onClick={submitRaffle} disabled={!name.trim() || !phone.trim() || !email.trim()}>
+          שלח והשתתף בהגרלה 🎉
         </button>
       </div>
     </div>
@@ -599,20 +597,16 @@ function SurveyForm({ survey, onBack }) {
     return d;
   };
 
-  const submit = async () => {
-    setSubmitting(true); setError(null);
-    try {
-      if (GOOGLE_SCRIPT_URL) {
-        await fetch(GOOGLE_SCRIPT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(buildPayload()) });
-      }
-    } catch(e) {
-      console.log("fetch error (ignored for no-cors):", e);
+  const submit = () => {
+    if (GOOGLE_SCRIPT_URL) {
+      try {
+        fetch(GOOGLE_SCRIPT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(buildPayload()) });
+      } catch(e) { console.log(e); }
     }
     setSubmitted(true);
     var rIdx = -1;
     for (var ri = 0; ri < qs.length; ri++) { if (qs[ri].type === "raffle") { rIdx = ri; break; } }
     setStep(rIdx >= 0 ? rIdx : qs.length - 1);
-    setSubmitting(false);
   };
 
   // Find the last answerable step (before raffle/thanks)
