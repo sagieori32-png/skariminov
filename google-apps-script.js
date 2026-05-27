@@ -18,6 +18,7 @@ const SHEET_MAP = {
   students: "סטודנטים",
   professionals: "אנשי מקצוע",
   public: "קהל רחב",
+  __raffle__: "הגרלה",
 };
 
 function doPost(e) {

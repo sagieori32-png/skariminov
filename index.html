@@ -605,12 +605,24 @@ function SurveyForm({ survey, onBack }) {
       if (GOOGLE_SCRIPT_URL) {
         await fetch(GOOGLE_SCRIPT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(buildPayload()) });
       }
-      setSubmitted(true); setStep(qs.length - 1);
+      setSubmitted(true);
+      // Find the raffle step (or thanks if no raffle)
+      const raffleIdx = qs.findIndex(q => q.type === "raffle");
+      setStep(raffleIdx >= 0 ? raffleIdx : qs.length - 1);
     } catch { setError("שגיאה בשליחה. אנא נסו שוב."); }
     finally { setSubmitting(false); }
   };
 
-  const next = () => { if (step < qs.length - 2) setStep(step + 1); else if (!submitted) submit(); };
+  // Find the last answerable step (before raffle/thanks)
+  const lastAnswerIdx = qs.reduce((last, q, i) => nonQ.includes(q.type) ? last : i, 0);
+  const isRaffle = cur.type === "raffle";
+
+  const next = () => {
+    if (isRaffle) { setStep(qs.length - 1); return; }
+    if (step < lastAnswerIdx) { setStep(step + 1); return; }
+    if (step === lastAnswerIdx && !submitted) { submit(); return; }
+    setStep(step + 1);
+  };
   const prev = () => { if (step > 0) setStep(step - 1); };
 
   const c = survey.color;
@@ -654,7 +666,7 @@ function SurveyForm({ survey, onBack }) {
           {!isThanks ? (
             <div className={`nr ${isKids ? "kn" : ""}`}>
               <button className="nb pr" onClick={next}>
-                {step === qs.length - 2 ? (isKids ? "שליחה! 🚀" : "שליחה") : (isKids ? "!הבא ➜" : "הבא")}
+                {isRaffle ? (isKids ? "!המשך ➜" : "המשך") : step === lastAnswerIdx ? (isKids ? "שליחה! 🚀" : "שליחה") : (isKids ? "!הבא ➜" : "הבא")}
               </button>
               <div className="nr-side">
                 {!isInfo && <button className="nb sk" onClick={next}>{isKids ? "דלגו ⏭️" : "דלג"}</button>}
