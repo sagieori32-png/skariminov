@@ -65,6 +65,7 @@ const kidsSurvey = {
     },
     { type: "kids-text", question: "לאיזה נושא או בעיה צריך לדעתכם לפתח מענה?", emoji: "💡", dataKey: "נושא לפיתוח מענה", placeholder: "...כתבו כאן" },
     { type: "kids-text", question: "רוצים להגיד עוד משהו?", emoji: "✏️", dataKey: "הערות נוספות", placeholder: "...כתבו כאן", optional: true },
+    { type: "raffle" },
     { type: "thanks-kids", emoji: "🌟", title: "!תודה רבה", content: "התשובות שלכם מאוד חשובות\nויעזרו לנו לעזור לילדים ולבני נוער!" },
   ],
 };
@@ -87,6 +88,7 @@ const studentsSurvey = {
     { type: "textarea", question: "לאיזה נושא או בעיה צריך לדעתך לפתח מענה?", dataKey: "נושא לפיתוח מענה", placeholder: "כתבו בקצרה...", maxLen: 300 },
     { type: "textarea", question: "האם היית רוצה להשתתף בקבוצת עבודה כזאת? אם כן, במה יכולת לתרום?", dataKey: "השתתפות בקבוצת עבודה", placeholder: "כתבו בקצרה...", maxLen: 300, optional: true },
     { type: "short-text", question: "הערות נוספות", dataKey: "הערות נוספות", placeholder: "אופציונלי...", optional: true },
+    { type: "raffle" },
     { type: "thanks", content: "תודה רבה על השתתפותכם! 🙏\nהתשובות שלכם יסייעו לנו בתכנון המחקרים." },
   ],
 };
@@ -101,6 +103,7 @@ const prosSurvey = {
     { type: "scale", question: "באיזו מידה לקוחותיך נפגעו מהמלחמה?", subtitle: "1 = במידה מועטה, 12 = במידה רבה מאוד", dataKey: "מידת פגיעת לקוחות מהמלחמה", min: 1, max: 12 },
     { type: "textarea", question: "לאיזה נושא או בעיה צריך לדעתך לפתח מענה?", dataKey: "נושא לפיתוח מענה", placeholder: "כתבו בקצרה...", maxLen: 300 },
     { type: "textarea", question: "האם היית רוצה להשתתף בקבוצת עבודה כזאת? אם כן, במה יכולת לתרום?", dataKey: "השתתפות בקבוצת עבודה", placeholder: "כתבו בקצרה...", maxLen: 300, optional: true },
+    { type: "raffle" },
     { type: "thanks", content: "תודה רבה על השתתפותכם! 🙏\nהתובנות שלכם מהשטח חשובות מאוד." },
   ],
 };
@@ -117,6 +120,7 @@ const publicSurvey = {
     { type: "textarea", question: "לאיזה נושא או בעיה צריך לדעתך לפתח מענה?", dataKey: "נושא לפיתוח מענה", placeholder: "כתבו בקצרה...", maxLen: 300 },
     { type: "textarea", question: "האם היית רוצה להשתתף בקבוצת עבודה כזאת? אם כן, במה יכולת לתרום?", dataKey: "השתתפות בקבוצת עבודה", placeholder: "כתבו בקצרה...", maxLen: 300, optional: true },
     { type: "short-text", question: "הערות נוספות", dataKey: "הערות נוספות", placeholder: "אופציונלי...", optional: true },
+    { type: "raffle" },
     { type: "thanks", content: "תודה רבה על השתתפותכם! 🙏\nדעתכם חשובה ותסייע לנו בתכנון מחקרים." },
   ],
 };
@@ -184,6 +188,10 @@ html,body{font-family:'Noto Sans Hebrew',sans-serif;background:${P.bg};color:${P
   transition:all .2s;
 }
 .results-btn:hover{background:${P.text};color:white;border-color:${P.text}}
+
+.raffle-card{animation:fu .4s ease-out}
+.raffle-fields{display:flex;flex-direction:column;gap:14px}
+.rf label{display:block;font-size:.85rem;font-weight:500;color:${P.textSec};margin-bottom:6px}
 
 /* SURVEY SHELL */
 .svc{width:100%;max-width:620px;animation:fu .4s ease-out}
@@ -459,6 +467,84 @@ function QShortText({ q, value, onChange }) {
 }
 
 function QTwoSelects({ q, value = {}, onChange }) {
+
+function QRaffle({ surveyId, isKids, accentColor }) {
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  const submit = async () => {
+    if (!name.trim() || !phone.trim() || !email.trim()) return;
+    setSending(true);
+    try {
+      if (GOOGLE_SCRIPT_URL) {
+        await fetch(GOOGLE_SCRIPT_URL, {
+          method: "POST", mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ survey: "__raffle__", "שם מלא": name, "טלפון": phone, "דואר אלקטרוני": email, "סקר": surveyId }),
+        });
+      }
+      setSent(true);
+    } catch { }
+    finally { setSending(false); }
+  };
+
+  if (sent) {
+    return (
+      <div className="qc raffle-card" style={{ textAlign: "center" }}>
+        <div style={{ fontSize: "2.5rem", marginBottom: 12 }}>🎉</div>
+        <h3>{isKids ? "נרשמתם להגרלה!" : "נרשמת להגרלה!"}</h3>
+        <p className="qs">בהצלחה!</p>
+      </div>
+    );
+  }
+
+  if (!showForm) {
+    return (
+      <div className="qc raffle-card" style={{ textAlign: "center" }}>
+        <div style={{ fontSize: "2.5rem", marginBottom: 12 }}>🎁</div>
+        <h3>{isKids ? "רוצים להשתתף בהגרלה?" : "רוצה להשתתף בהגרלה?"}</h3>
+        <p className="qs">שובר BUYME בסך 250 ₪</p>
+        <p className="qs" style={{ fontSize: ".78rem", marginBottom: 16 }}>הפרטים האישיים נשמרים בנפרד ואינם מקושרים לתשובות הסקר</p>
+        <button className="nb pr" style={{ background: accentColor, marginBottom: 8 }} onClick={() => setShowForm(true)}>
+          {isKids ? "!כן, אני רוצה 🎉" : "כן, השאר/י פרטים"}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="qc raffle-card">
+      <div style={{ textAlign: "center", marginBottom: 16 }}>
+        <div style={{ fontSize: "2rem", marginBottom: 8 }}>🎁</div>
+        <h3>פרטים להגרלה</h3>
+        <p className="qs" style={{ fontSize: ".78rem" }}>הפרטים נשמרים בנפרד ואינם מקושרים לתשובות הסקר</p>
+      </div>
+      <div className="raffle-fields">
+        <div className="rf">
+          <label>שם מלא</label>
+          <input className="ti" type="text" value={name} onChange={e => setName(e.target.value)} placeholder="השם שלך" />
+        </div>
+        <div className="rf">
+          <label>טלפון</label>
+          <input className="ti" type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="050-0000000" dir="ltr" style={{ textAlign: "right" }} />
+        </div>
+        <div className="rf">
+          <label>דואר אלקטרוני</label>
+          <input className="ti" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="example@email.com" dir="ltr" style={{ textAlign: "right" }} />
+        </div>
+      </div>
+      <div style={{ textAlign: "center", marginTop: 16 }}>
+        <button className="nb pr" style={{ background: accentColor }} onClick={submit} disabled={sending || !name.trim() || !phone.trim() || !email.trim()}>
+          {sending ? "שולח..." : "שלח והשתתף בהגרלה 🎉"}
+        </button>
+      </div>
+    </div>
+  );
+}
   const upd = (id, v) => onChange({ ...value, [id]: v });
   return (
     <div className="qc">
@@ -490,7 +576,7 @@ function SurveyForm({ survey, onBack }) {
   const qs = survey.questions;
   const cur = qs[step];
   const isKids = survey.id === "kids";
-  const nonQ = ["info", "info-kids", "thanks", "thanks-kids"];
+  const nonQ = ["info", "info-kids", "thanks", "thanks-kids", "raffle"];
   const isThanks = cur.type === "thanks" || cur.type === "thanks-kids";
   const isInfo = cur.type === "info" || cur.type === "info-kids";
   const answerable = qs.filter(q => !nonQ.includes(q.type));
@@ -539,6 +625,7 @@ function SurveyForm({ survey, onBack }) {
       case "kids-text": return <QKidsText q={cur} value={answers[step]} onChange={setAns} />;
       case "info": return <QInfo q={cur} />;
       case "thanks": return <QThanks q={cur} />;
+      case "raffle": return <QRaffle surveyId={survey.id} isKids={isKids} accentColor={c.accent} />;
       case "chips": return <QChips q={cur} value={answers[step]} onChange={setAns} />;
       case "scale": return <QScale q={cur} value={answers[step]} onChange={setAns} />;
       case "textarea": return <QTextarea q={cur} value={answers[step]} onChange={setAns} />;
