@@ -16,7 +16,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
   <script type="text/babel">
-    const { useState } = React;
+    const { useState, useEffect } = React;
 
 
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz__ZpT37jUb7PW4d5KQjBXV-Ir_Kzaoh0FT5S7fgpW_fMtz1utkY-RGWZq512JC7CK/exec";
@@ -162,6 +162,8 @@ html,body{font-family:'Noto Sans Hebrew',sans-serif;background:${P.bg};color:${P
 .sc .si{font-size:2.4rem;margin-bottom:12px;display:block}
 .sc h3{font-size:1.1rem;font-weight:600;margin-bottom:4px}
 .sc p{font-size:.85rem;color:${P.textSec};font-weight:300;line-height:1.5}
+.sc-count{display:inline-flex;align-items:center;gap:5px;margin-top:10px;margin-bottom:2px;font-size:.82rem;font-weight:600;color:var(--ca);background:color-mix(in srgb,var(--ca) 12%,transparent);border-radius:20px;padding:4px 12px}
+.sc-count-loading{opacity:.4;font-size:.78rem;color:${P.textSec};margin-top:8px}
 .copy-link-btn{
   display:block;margin-top:14px;background:none;border:1.5px solid ${P.border};
   border-radius:10px;padding:7px 14px;font-size:.8rem;font-family:'Noto Sans Hebrew',sans-serif;
@@ -684,6 +686,17 @@ function SurveyForm({ survey, onBack }) {
 
 function HomeScreen({ onSelect }) {
   const [copied, setCopied] = useState(null);
+  const [counts, setCounts] = useState(null);
+
+  useEffect(() => {
+    if (!GOOGLE_SCRIPT_URL) return;
+    fetch(GOOGLE_SCRIPT_URL + "?action=counts")
+      .then(r => r.json())
+      .then(data => {
+        if (data && typeof data === "object") setCounts(data);
+      })
+      .catch(() => {});
+  }, []);
 
   const copyLink = (e, id) => {
     e.stopPropagation();
@@ -709,6 +722,11 @@ function HomeScreen({ onSelect }) {
             <span className="si">{s.icon}</span>
             <h3>{s.title}</h3>
             <p>{s.subtitle}</p>
+            {counts === null
+              ? <div className="sc-count-loading">טוען נתונים...</div>
+              : counts[s.id] != null
+                ? <div className="sc-count">✔ {counts[s.id].toLocaleString("he-IL")} מילאו</div>
+                : null}
             <button className="copy-link-btn" onClick={(e) => copyLink(e, s.id)} title="העתק קישור לסקר">
               {copied === s.id ? "✓ הקישור הועתק!" : "🔗 העתק קישור"}
             </button>
